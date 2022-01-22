@@ -20,30 +20,72 @@ def interpreter(fn):
         exit(ret)
 
 def lexer(fn):
-    print('todo')
+    with open(fn) as fo:
+        l = fstep.Lexer(fo)
+        print(f"(",end=' ')
+        while True:
+            token = l.NextToken()
+            if token != fstep.Token.End:
+                if token == fstep.Token.Id:
+                    print(f"(Id {l.id_val_})",end=' ')
+                elif token == fstep.Token.Integer:
+                    print(f"(Integer {l.int_val_})",end=' ')
+                elif token == fstep.Token.Keyword:
+                    print(f"(Keyword {l.key_val_})",end=' ')
+                elif token == fstep.Token.Operator:
+                    print(f"(Operator {l.op_val_})",end=' ')
+                elif token == fstep.Token.Other:
+                    print(f"(Other {l.other_val_})",end=' ')
+            else:
+                break
+        print(f")")
 
 def parser(fn):
-    print('todo')
+    with open(fn) as fo:
+        lexer = fstep.Lexer(fo)
+        parser = fstep.Parser(lexer)
+        ast_list = []
+        while True:
+            ast = parser.ParseNext()
+            if not ast:
+                break
+            ast_list.append(ast)
 
-def assembler(fn):
-    print('todo')
+    for ast in ast_list:
+        print(ast)
+
+def assembler(fn, out_fn=None):
+    with open(fn) as fo:
+        lexer = fstep.Lexer(fo)
+        parser = fstep.Parser(lexer)
+        gen = fstep.IRGenerator()
+
+        while True:
+            ast = parser.ParseNext()
+            if not ast:
+                break
+            ast.GenerateIR(gen)
+
+        if out_fn != None:
+            with open(out_fn, 'w') as out_fo:
+                gen.Dump(out_fo)
 
 def main():
     usage = '''
     Usage: fstep -s [file] [options]
     Options:
         -h, --h         show help
-        -s file         import the source file, required!
+        -s file         source file
         -l              lexer
         -p              parser
-        -a              assembler, the assembler file is in the same path with compiler.py
         -i              interpreter
+        -a file         risc-v assembler
     Examples:
         fstep -h
         fstep -s source.fstep -i
     '''
     try:
-        opts, argvs = getopt.getopt(sys.argv[1:], 's:lpahi', ['help'])
+        opts, argvs = getopt.getopt(sys.argv[1:], 's:lpa:hi', ['help'])
     except:
         print(usage)
         exit()
@@ -63,7 +105,8 @@ def main():
         elif opt == '-p':
             return parser(fn)
         elif opt == '-a':
-            return assembler(fn)
+            out_fn = argv
+            return assembler(fn, out_fn)
         elif opt == '-i':
             return interpreter(fn)
 

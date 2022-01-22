@@ -14,7 +14,6 @@ class Environment(dict):
         Environment.current = self._old_scope
 
     def get_item(self, k, recursive=True):
-        # import pdb;pdb.set_trace()
         ret = self.get(k, None)
         if ret == None and recursive and self._old_scope != None:
             return self._old_scope.get_item(k)
@@ -35,8 +34,8 @@ class IRGenerator(object):
         self.lib_funcs_.update({"input":FunctionDef("input", 0)})
         self.lib_funcs_.update({"print":FunctionDef("print", 1)})
 
-    #   // print error message to stderr
-    #   ValPtr LogError(std::string_view message);
+    # // print error message to stderr
+    # ValPtr LogError(std::string_view message);
     # // count of error
     def error_num(self):
         return self.error_num_
@@ -53,8 +52,7 @@ class IRGenerator(object):
 
     # // visitor methods
     def GenerateOn(self, ast):
-        # import pdb;pdb.set_trace()
-        print('GenerateOn'+ast.__class__.__name__)
+        # print('GenerateOn'+ast.__class__.__name__)
         # return getattr(self, 'GenerateOn'+ast.__class__.__name__)(ast)
         m = getattr(self, 'GenerateOn'+ast.__class__.__name__)
         r = m(ast)
@@ -98,9 +96,10 @@ class IRGenerator(object):
             return None
         # // add symbol definition
         slot = self.func_.AddSlot()
-        if not Environment.current.AddItem(ast.name_, slot):
+        if ast.name_ in Environment.current:
             print("symbol has already been defined")
             return None
+        Environment.current.update({ast.name_:slot})
         # // generate assign instruction
         self.func_.PushInst(AssignInst(slot, expr))
         return None
@@ -112,8 +111,7 @@ class IRGenerator(object):
             return None
         # // get stack slot of the symbol
         slot = Environment.current.get_item(ast.name_)
-        if not slot:
-            import pdb;pdb.set_trace()
+        if slot == None:
             print("symbol has not been defined")
             return None
         # // generate assign instruction
@@ -123,7 +121,7 @@ class IRGenerator(object):
     def GenerateOnIfAST(self, ast):
         # // generate condition
         cond = ast.cond_.GenerateIR(self)
-        if not cond:
+        if cond == None:
             return None
         # // create labels
         false_branch = LabelVal()
@@ -144,7 +142,7 @@ class IRGenerator(object):
     def GenerateOnReturnAST(self, ast):
         # // generate return value
         expr = ast.expr_.GenerateIR(self)
-        if not expr:
+        if expr == None:
             return None
         # // generate return instruction
         self.func_.PushInst(ReturnInst(expr))
@@ -157,13 +155,13 @@ class IRGenerator(object):
             end_logic = LabelVal()
             # // generate lhs first
             lhs = ast.lhs_.GenerateIR(self)
-            if not lhs:
+            if lhs == None:
                 return None
             # // generate conditional branch
             self.func_.PushInst(BranchInst(ast.op_ == Operator.LOr, lhs, end_logic))
             # // generate rhs
             rhs = ast.rhs_.GenerateIR(self)
-            if not rhs:
+            if rhs == None:
                 return None
             self.func_.PushInst(AssignInst(lhs, rhs))
             # // generate label definition
@@ -171,10 +169,9 @@ class IRGenerator(object):
             return lhs
         else:
             # // generate lhs & rhs
-            # import pdb;pdb.set_trace()
             lhs = ast.lhs_.GenerateIR(self)
             rhs = ast.rhs_.GenerateIR(self)
-            if not lhs or not rhs:
+            if lhs == None or rhs == None:
                 return None
             # // generate binary operation
             dest = self.func_.AddSlot()
@@ -184,7 +181,7 @@ class IRGenerator(object):
     def GenerateOnUnaryAST(self, ast):
         # // generate operand
         opr = ast.opr_.GenerateIR(self)
-        if not opr:
+        if opr == None:
             return None
         # // generate unary operation
         dest = self.func_.AddSlot()
@@ -209,7 +206,7 @@ class IRGenerator(object):
         args = []
         for i in ast.args_:
             arg = i.GenerateIR(self)
-            if not arg:
+            if arg == None:
                 return None
             args.append(arg)
         # // generate function call
@@ -223,8 +220,7 @@ class IRGenerator(object):
     def GenerateOnIdAST(self, ast):
         # // get stack slot of the symbol
         slot = Environment.current.get_item(ast.id_)
-        if not slot:
-            import pdb;pdb.set_trace()
+        if slot == None:
             print("symbol has not been defined")
             return None
         return slot

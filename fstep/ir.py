@@ -85,7 +85,7 @@ class FunctionDef(object):
     def arg_num(self):
         return self.arg_num_
     def slot_offset(self):
-        return ((self.arg_num_ + self.slot_num_) / 4 + 1) * 16
+        return ((self.arg_num_ + self.slot_num_) // 4 + 1) * 16
 
 # // assignment
 class AssignInst(InstBase):
@@ -299,10 +299,10 @@ class ArgRefVal(ValueBase):
         self.id_ = id
 
     def DumpRead(self, os):
-        os.write(f"  mv {kResultReg}, s{self.id_}/n")
+        os.write(f"  mv {kResultReg}, s{self.id_}\n")
 
     def DumpWrite(self, os):
-        os.write(f"  mv s{self.id_}, {kResultReg}/n")
+        os.write(f"  mv s{self.id_}, {kResultReg}\n")
 
     def __str__(self):
         print('ArgRefVal')
@@ -317,11 +317,10 @@ class LabelVal(ValueBase):
         LabelVal.next_id_ += 1
 
     def DumpRead(self, os):
-        os.write(f"  mv {kResultReg}, s{self.id_}\n")
+        os.write(f".label{self.id_}")
 
     def DumpWrite(self, os):
-        os.write(f"  mv s{self.id_}, {kResultReg}/n")
-
+        assert False and "writing a label"
 
     def __str__(self):
         print('LabelVal')
@@ -334,11 +333,10 @@ class IntVal(ValueBase):
         self.val_ = val
 
     def DumpRead(self, os):
-        os.write(f"  li {kResultReg}, {self.val_}/n")
+        os.write(f"  li {kResultReg}, {self.val_}\n")
 
     def DumpWrite(self, os):
         assert False and "writing an integer"
-
 
     def __str__(self):
         print('IntVal')
